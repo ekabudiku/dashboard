@@ -1,0 +1,108 @@
+/* === Import Font Modern dari Google Fonts === */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* === Variabel Warna untuk Kemudahan Kustomisasi === */
+:root {
+    --bg-color: #f8f9fa;          /* Latar belakang utama (sangat terang) */
+    --card-bg-color: #ffffff;     /* Warna dasar kartu */
+    --primary-color: #5b86e5;     /* Biru lembut untuk aksen */
+    --text-color-dark: #343a40;   /* Abu-abu gelap untuk teks */
+    --text-color-light: #6c757d;  /* Abu-abu terang untuk subjudul */
+    --border-color: #e9ecef;      /* Warna border yang sangat halus */
+}
+
+/* === Latar Belakang & Font Dasar === */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color-dark);
+}
+
+/* === Header === */
+header {
+    background-color: var(--card-bg-color);
+    color: var(--text-color-dark);
+    padding: 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* === Container Utama === */
+main.container-fluid {
+    padding: 2rem;
+}
+
+/* === Desain Kartu (Card) === */
+.card {
+    border: none; /* Hilangkan border default */
+    border-radius: 1rem; /* Sudut lebih tumpul */
+    background-color: var(--card-bg-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Bayangan halus */
+    transition: transform 0.2s ease-in-out; /* Animasi saat hover */
+}
+.card:hover {
+    transform: translateY(-5px); /* Sedikit terangkat saat disentuh */
+}
+.card-header {
+    font-weight: 500;
+    background-color: transparent; /* Header kartu bersih */
+    color: var(--text-color-dark);
+    border-bottom: 1px solid var(--border-color); /* Garis pemisah halus */
+    padding: 1rem 1.5rem;
+    border-radius: 1rem 1rem 0 0;
+}
+.card-body {
+    padding: 1.5rem;
+}
+
+/* === Tampilan Angka KPI === */
+.card-title {
+    font-weight: 700;
+    font-size: 2.25rem;
+    color: var(--primary-color); /* Warna biru sebagai aksen */
+}
+.card-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-color-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* === Peta === */
+#map {
+    height: 500px;
+    width: 100%;
+    border-radius: 0.75rem; /* Samakan sudut dengan kartu */
+    border: none;
+}
+
+/* === Pie Chart === */
+#pieChart {
+    max-height: 250px; /* Sedikit lebih kecil agar pas */
+}
+
+/* === Progress Bar Detail Zona === */
+.progress {
+    height: 25px !important;
+    border-radius: 25px;
+    background-color: var(--border-color);
+}
+.progress-bar {
+    font-weight: 600;
+    font-size: 0.9rem;
+    background-color: var(--primary-color);
+    border-radius: 25px;
+}
+
+/* === Tampilan Detail Zona === */
+#detail-nama-zona {
+    font-weight: 600;
+    color: var(--text-color-dark);
+}
