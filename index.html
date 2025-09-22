@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Progres Survei</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Dashboard Progres Survei</h1>
+        <div id="lastUpdateContainer">
+  <marquee id="lastUpdateMarquee" behavior="scroll" direction="left" style="color:#fff; background:#007bff; padding:6px; font-weight:bold;">
+    Loading update...
+  </marquee>
+</div>
+
+    </header>
+
+    <main class="container-fluid mt-4">
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                         <label for="surveyorFilter" class="form-label fw-bold">Filter Berdasarkan Surveyor</label>
+                         <select id="surveyorFilter" class="form-select">
+                            <option value="all" selected>Semua Surveyor</option>
+                         </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle">Total Progres Keseluruhan</h6>
+                        <h2 class="card-title" id="kpi-total-progres">0%</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle">Titik Selesai</h6>
+                        <h2 class="card-title" id="kpi-titik-selesai">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle">Target Penyelesaian</h6>
+                        <h2 class="card-title" id="kpi-target-info">0 / 0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle">Area Selesai</h6>
+                        <h2 class="card-title" id="kpi-zona-tuntas">0 / 20</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-7 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        Peta Progres Zona
+                    </div>
+                    <div class="card-body">
+                        <div id="map"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5 mb-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Komposisi Progres Total
+                    </div>
+                    <div class="card-body">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Progres per Area Survey
+                    </div>
+                    <div class="card-body">
+                        <canvas id="areaBarChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Detail Zona (Klik di Peta)
+                    </div>
+                    <div class="card-body">
+                        <h4 id="detail-nama-zona">-</h4>
+                        <p class="mb-1">Progres: <strong id="detail-progres">-</strong> dari <strong id="detail-target">-</strong> Titik</p>
+                        <div class="progress" style="height: 25px;">
+                            <div id="detail-progress-bar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+                <div class="card">
+                    <div class="card-header">
+                        Kendala / Keluh Kesah Terbaru
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        <ul class="list-group list-group-flush" id="keluh-kesah-list">
+                           <li class="list-group-item text-muted">Belum ada data kendala.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="assets/script.js"></script>
+</body>
+</html>
