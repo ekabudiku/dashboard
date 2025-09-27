@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { nama: "Wildan Abdullah", file: "0001_3211140411870013.geojson" }
     ];
 
-    let map, pieChart, areaBarChart, geojsonLayer, legend;
+    let map, pieChart, areaBarChart, dailyChart, geojsonLayer, legend;
     let allProgresRows = [];
     let zonaGeoJSON;
     let surveyorTarget = {}; 
@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
             zonaGeoJSON = { type: "FeatureCollection", features: allFeatures };
             allProgresRows = Papa.parse(progresData, { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
 
-            // 🟢 update tulisan berjalan setelah data berhasil dimuat
             updateLastUpdateText();
 
             // target_survey per surveyor (ambil 1 baris pertama saja)
@@ -107,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderKPIs(mapData, selectedSurveyor);
         renderPieChart(mapData, selectedSurveyor);
         renderAreaBarChart(mapData, selectedSurveyor);
+        renderDailyChart(filteredRows, selectedSurveyor);
         renderKeluhKesah(filteredRows);
         renderMap(mapData, zonaGeoJSON, selectedSurveyor);
     }
@@ -208,6 +208,57 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // === GRAFIK HARIAN ===
+    function renderDailyChart(rows, selectedSurveyor) {
+        const ctx = document.getElementById('dailyChart').getContext('2d');
+
+        const grouped = {};
+        rows.forEach(r => {
+            const surveyor = safeGet(r, 'Surveyor');
+            if (selectedSurveyor !== 'all' && surveyor !== selectedSurveyor) return;
+
+            let tgl = safeGet(r, 'Tanggal Survey');
+            const jumlah = Number(safeGet(r, 'Jumlah Titik Valid Disurvei Hari Ini')) || 0;
+            if (!tgl || jumlah === 0) return;
+
+            // 🔹 Parsing manual dd/mm/yyyy → yyyy-mm-dd
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(tgl)) {
+                const [d, m, y] = tgl.split('/');
+                tgl = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+            }
+
+            grouped[tgl] = (grouped[tgl] || 0) + jumlah;
+        });
+
+        const labels = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
+        const data = labels.map(d => grouped[d]);
+
+        if (dailyChart) dailyChart.destroy();
+        dailyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Jumlah Titik Valid / Hari',
+                    data,
+                    borderColor: '#5b86e5',
+                    backgroundColor: 'rgba(91,134,229,0.2)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: true, position: 'top' } },
+                scales: {
+                    x: { title: { display: true, text: 'Tanggal' } },
+                    y: { title: { display: true, text: 'Jumlah Titik' }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
     function renderKeluhKesah(rows) {
         const listContainer = document.getElementById('keluh-kesah-list');
         listContainer.innerHTML = '';
@@ -238,7 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
             }).addTo(map);
 
-            // Tambahkan legend sekali saja
             legend = L.control({ position: 'bottomright' });
             legend.onAdd = function () {
                 const div = L.DomUtil.create('div', 'info legend');
@@ -295,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const p = target > 0 ? ((selesai / target) * 100).toFixed(1) : 0;
 
-                // tooltip saat hover
                 layer.bindTooltip(
                     `Surveyor: ${surveyor || "N/A"}<br>Progres: ${p}%`,
                     { permanent: false, direction: "top" }
@@ -345,7 +394,6 @@ document.addEventListener('DOMContentLoaded', () => {
                           '#f7fbff';
     }
 
-    // === Tambahan fungsi Last Update ===
     function updateLastUpdateText() {
         const now = new Date();
         const formatter = new Intl.DateTimeFormat('id-ID', {
