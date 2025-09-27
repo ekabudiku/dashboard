@@ -14,27 +14,28 @@
     <header>
         <h1>Dashboard Progres Survei</h1>
         <div id="lastUpdateContainer">
-  <marquee id="lastUpdateMarquee" behavior="scroll" direction="left" style="color:#fff; background:#007bff; padding:6px; font-weight:bold;">
-    Loading update...
-  </marquee>
-</div>
-
+            <marquee id="lastUpdateMarquee" behavior="scroll" direction="left" style="color:#fff; background:#007bff; padding:6px; font-weight:bold;">
+                Loading update...
+            </marquee>
+        </div>
     </header>
 
     <main class="container-fluid mt-4">
+        <!-- Filter Surveyor -->
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                         <label for="surveyorFilter" class="form-label fw-bold">Filter Berdasarkan Surveyor</label>
-                         <select id="surveyorFilter" class="form-select">
+                        <label for="surveyorFilter" class="form-label fw-bold">Filter Berdasarkan Surveyor</label>
+                        <select id="surveyorFilter" class="form-select">
                             <option value="all" selected>Semua Surveyor</option>
-                         </select>
+                        </select>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- KPI -->
         <div class="row">
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="card h-100">
@@ -70,41 +71,45 @@
             </div>
         </div>
 
+        <!-- Main Content -->
         <div class="row">
+            <!-- Kolom kiri: Peta + Grafik Harian -->
             <div class="col-lg-7 mb-4">
-                <div class="card h-100">
-                    <div class="card-header">
-                        Peta Progres Zona
-                    </div>
+                <!-- Card Peta -->
+                <div class="card mb-4">
+                    <div class="card-header">Peta Progres Zona</div>
                     <div class="card-body">
                         <div id="map"></div>
                     </div>
                 </div>
+
+                <!-- Card Grafik Harian -->
+                <div class="card">
+                    <div class="card-header">Grafik Harian Titik Selesai</div>
+                    <div class="card-body">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
             </div>
 
+            <!-- Kolom kanan: Pie, Bar, Detail, Kendala -->
             <div class="col-lg-5 mb-4">
                 <div class="card mb-4">
-                    <div class="card-header">
-                        Komposisi Progres Total
-                    </div>
+                    <div class="card-header">Komposisi Progres Total</div>
                     <div class="card-body">
                         <canvas id="pieChart"></canvas>
                     </div>
                 </div>
                 
                 <div class="card mb-4">
-                    <div class="card-header">
-                        Progres per Area Survey
-                    </div>
+                    <div class="card-header">Progres per Area Survey</div>
                     <div class="card-body">
                         <canvas id="areaBarChart"></canvas>
                     </div>
                 </div>
                 
                 <div class="card mb-4">
-                    <div class="card-header">
-                        Detail Zona (Klik di Peta)
-                    </div>
+                    <div class="card-header">Detail Zona (Klik di Peta)</div>
                     <div class="card-body">
                         <h4 id="detail-nama-zona">-</h4>
                         <p class="mb-1">Progres: <strong id="detail-progres">-</strong> dari <strong id="detail-target">-</strong> Titik</p>
@@ -114,12 +119,8 @@
                     </div>
                 </div>
 
-                
-
                 <div class="card">
-                    <div class="card-header">
-                        Kendala / Keluh Kesah Terbaru
-                    </div>
+                    <div class="card-header">Kendala / Keluh Kesah Terbaru</div>
                     <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                         <ul class="list-group list-group-flush" id="keluh-kesah-list">
                            <li class="list-group-item text-muted">Belum ada data kendala.</li>
@@ -130,6 +131,7 @@
         </div>
     </main>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
