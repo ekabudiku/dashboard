@@ -3,12 +3,12 @@
 
 /* === Variabel Warna untuk Kemudahan Kustomisasi === */
 :root {
-    --bg-color: #f8f9fa;          /* Latar belakang utama (sangat terang) */
+    --bg-color: #f8f9fa;          /* Latar belakang utama */
     --card-bg-color: #ffffff;     /* Warna dasar kartu */
     --primary-color: #5b86e5;     /* Biru lembut untuk aksen */
     --text-color-dark: #343a40;   /* Abu-abu gelap untuk teks */
     --text-color-light: #6c757d;  /* Abu-abu terang untuk subjudul */
-    --border-color: #e9ecef;      /* Warna border yang sangat halus */
+    --border-color: #e9ecef;      /* Warna border halus */
 }
 
 /* === Latar Belakang & Font Dasar === */
@@ -41,20 +41,20 @@ main.container-fluid {
 
 /* === Desain Kartu (Card) === */
 .card {
-    border: none; /* Hilangkan border default */
-    border-radius: 1rem; /* Sudut lebih tumpul */
+    border: none;
+    border-radius: 1rem;
     background-color: var(--card-bg-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Bayangan halus */
-    transition: transform 0.2s ease-in-out; /* Animasi saat hover */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease-in-out;
 }
 .card:hover {
-    transform: translateY(-5px); /* Sedikit terangkat saat disentuh */
+    transform: translateY(-5px);
 }
 .card-header {
     font-weight: 500;
-    background-color: transparent; /* Header kartu bersih */
+    background-color: transparent;
     color: var(--text-color-dark);
-    border-bottom: 1px solid var(--border-color); /* Garis pemisah halus */
+    border-bottom: 1px solid var(--border-color);
     padding: 1rem 1.5rem;
     border-radius: 1rem 1rem 0 0;
 }
@@ -66,7 +66,7 @@ main.container-fluid {
 .card-title {
     font-weight: 700;
     font-size: 2.25rem;
-    color: var(--primary-color); /* Warna biru sebagai aksen */
+    color: var(--primary-color);
 }
 .card-subtitle {
     font-size: 0.9rem;
@@ -77,15 +77,19 @@ main.container-fluid {
 
 /* === Peta === */
 #map {
-    height: 500px;
     width: 100%;
-    border-radius: 0.75rem; /* Samakan sudut dengan kartu */
+    height: 500px; /* default desktop */
+    border-radius: 0.75rem;
     border: none;
 }
 
-/* === Pie Chart === */
-#pieChart {
-    max-height: 250px; /* Sedikit lebih kecil agar pas */
+/* === Chart (Pie, Bar, Daily) === */
+#pieChart,
+#areaBarChart,
+#dailyChart {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 300px; /* default desktop */
 }
 
 /* === Progress Bar Detail Zona === */
@@ -105,4 +109,50 @@ main.container-fluid {
 #detail-nama-zona {
     font-weight: 600;
     color: var(--text-color-dark);
+}
+
+/* === Responsif (Media Queries) === */
+@media (max-width: 992px) { /* Tablet */
+    #map {
+        height: 400px;
+    }
+    #pieChart,
+    #areaBarChart,
+    #dailyChart {
+        max-height: 250px;
+    }
+    header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) { /* HP landscape */
+    #map {
+        height: 300px;
+    }
+    #pieChart,
+    #areaBarChart,
+    #dailyChart {
+        max-height: 220px;
+    }
+    .card-title {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 576px) { /* HP kecil */
+    #map {
+        height: 250px;
+    }
+    #pieChart,
+    #areaBarChart,
+    #dailyChart {
+        max-height: 180px;
+    }
+    header h1 {
+        font-size: 1.25rem;
+    }
+    .card-title {
+        font-size: 1.5rem;
+    }
 }
