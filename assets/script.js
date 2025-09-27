@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let map, pieChart, areaBarChart, dailyChart, geojsonLayer, legend;
     let allProgresRows = [];
     let zonaGeoJSON;
-    let surveyorTarget = {}; 
-    let baseMapData = {};    
+    let surveyorTarget = {};
+    let baseMapData = {};
 
     function safeGet(row, key) {
         if (!row) return undefined;
@@ -43,8 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const promisesZona = SURVEYOR_DATA.map(d =>
                 fetch(GEOJSON_FOLDER_PATH + d.file).then(res => res.json())
-                    .then(fc => { fc._surveyor = d.nama; return fc; })
-                    .catch(() => ({ type: "FeatureCollection", features: [], _surveyor: d.nama }))
+                .then(fc => {
+                    fc._surveyor = d.nama;
+                    return fc;
+                })
+                .catch(() => ({
+                    type: "FeatureCollection",
+                    features: [],
+                    _surveyor: d.nama
+                }))
             );
 
             const [progresData, ...zonaFeatures] = await Promise.all([
@@ -59,19 +66,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             );
 
-            zonaGeoJSON = { type: "FeatureCollection", features: allFeatures };
-            allProgresRows = Papa.parse(progresData, { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
+            zonaGeoJSON = {
+                type: "FeatureCollection",
+                features: allFeatures
+            };
+            allProgresRows = Papa.parse(progresData, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true
+            }).data;
 
             updateLastUpdateText();
 
-            // target_survey per surveyor (ambil 1 baris pertama saja)
+            // Target dihitung otomatis dari jumlah zona (fitur) di file GeoJSON.
             surveyorTarget = {};
             zonaFeatures.forEach(fc => {
                 const surveyor = fc._surveyor;
-                let targetZona = 0;
-                if (fc.features && fc.features.length > 0) {
-                    targetZona = fc.features[0].properties?.target_survey || 0;
-                }
+                const targetZona = fc.features ? fc.features.length : 0; // Menghitung jumlah zona
                 surveyorTarget[surveyor] = targetZona;
             });
 
@@ -174,10 +185,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pieChart) pieChart.destroy();
         pieChart = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels: ['Sudah Disurvei', 'Belum Disurvei'],
-                datasets: [{ data: [totalSelesai, sisa > 0 ? sisa : 0],
-                             backgroundColor: ['#5b86e5', '#e9ecef'], borderColor: '#fff' }] },
-            options: { responsive: true, plugins: { legend: { position: 'top' } } }
+            data: {
+                labels: ['Sudah Disurvei', 'Belum Disurvei'],
+                datasets: [{
+                    data: [totalSelesai, sisa > 0 ? sisa : 0],
+                    backgroundColor: ['#5b86e5', '#e9ecef'],
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' }
+                }
+            }
         });
     }
 
@@ -202,32 +223,61 @@ document.addEventListener('DOMContentLoaded', () => {
         if (areaBarChart) areaBarChart.destroy();
         areaBarChart = new Chart(ctx, {
             type: 'bar',
-            data: { labels, datasets: [{ label: 'Progres (%)', data, backgroundColor: '#9ecae1', borderColor: '#3182bd', borderWidth: 1 }] },
-            options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true, max: 100 } } }
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Progres (%)',
+                    data,
+                    backgroundColor: '#9ecae1',
+                    borderColor: '#3182bd',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { beginAtZero: true, max: 100 }
+                }
+            }
         });
     }
 
-    // === GRAFIK HARIAN ===
     function renderDailyChart(rows, selectedSurveyor) {
         const ctx = document.getElementById('dailyChart').getContext('2d');
-
         const grouped = {};
+
         rows.forEach(r => {
             const surveyor = safeGet(r, 'Surveyor');
             if (selectedSurveyor !== 'all' && surveyor !== selectedSurveyor) return;
 
-            let tgl = safeGet(r, 'Tanggal Survey');
+            const tglStr = safeGet(r, 'Tanggal Survey');
             const jumlah = Number(safeGet(r, 'Jumlah Titik Valid Disurvei Hari Ini')) || 0;
-            if (!tgl || jumlah === 0) return;
+            if (!tglStr || jumlah === 0) return;
 
-            // 🔹 Parsing manual dd/mm/yyyy → yyyy-mm-dd
-            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(tgl)) {
-                const [d, m, y] = tgl.split('/');
-                tgl = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+            let dateObj;
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(tglStr)) {
+                const parts = tglStr.split('/'); // format M/D/YYYY
+                // Urutan: tahun, bulan (0-11), hari
+                dateObj = new Date(parts[2], parts[0] - 1, parts[1]);
+            } else {
+                dateObj = new Date(tglStr);
             }
 
-            grouped[tgl] = (grouped[tgl] || 0) + jumlah;
+            if (isNaN(dateObj.getTime())) {
+                console.warn(`Format tanggal tidak valid dilewati: ${tglStr}`);
+                return;
+            }
+
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            const tglKey = `${y}-${m}-${d}`;
+
+            grouped[tglKey] = (grouped[tglKey] || 0) + jumlah;
         });
 
         const labels = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
@@ -373,25 +423,28 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('detail-target').innerText = "1 Area (3 Titik)";
 
         const bar = document.getElementById('detail-progress-bar');
-        bar.style.width = `${p}%`; bar.innerText = `${p}%`; bar.setAttribute('aria-valuenow', p);
+        bar.style.width = `${p}%`;
+        bar.innerText = `${p}%`;
+        bar.setAttribute('aria-valuenow', p);
     }
 
     function populateSurveyorFilter(names) {
         const filter = document.getElementById('surveyorFilter');
         names.sort().forEach(n => {
             const opt = document.createElement('option');
-            opt.value = n; opt.innerText = n;
+            opt.value = n;
+            opt.innerText = n;
             filter.appendChild(opt);
         });
     }
 
     function getWarnaGradasi(p) {
-        return p > 0.9 ? '#08519c' : 
-               p > 0.7 ? '#3182bd' : 
-               p > 0.5 ? '#6baed6' :
-               p > 0.3 ? '#9ecae1' : 
-               p > 0.1 ? '#c6dbef' : 
-                          '#f7fbff';
+        return p > 0.9 ? '#08519c' :
+            p > 0.7 ? '#3182bd' :
+            p > 0.5 ? '#6baed6' :
+            p > 0.3 ? '#9ecae1' :
+            p > 0.1 ? '#c6dbef' :
+            '#f7fbff';
     }
 
     function updateLastUpdateText() {
