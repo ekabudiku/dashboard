@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let surveyorTarget = {};
     let baseMapData = {};
 
+    // ================== UTILS ==================
     function safeGet(row, key) {
         if (!row) return undefined;
         const keys = Object.keys(row);
@@ -39,37 +40,35 @@ document.addEventListener('DOMContentLoaded', () => {
         return found ? row[found] : undefined;
     }
 
+    function showLoading() {
+        const el = document.getElementById("loading-overlay");
+        if (el) el.style.display = "flex";
+    }
+    function hideLoading() {
+        const el = document.getElementById("loading-overlay");
+        if (el) el.style.display = "none";
+    }
+
+    // ================== INIT ==================
     async function initDashboard() {
         try {
-            const promisesZona = SURVEYOR_DATA.map(d =>
-                fetch(GEOJSON_FOLDER_PATH + d.file).then(res => res.json())
-                .then(fc => {
-                    fc._surveyor = d.nama;
-                    return fc;
-                })
-                .catch(() => ({
-                    type: "FeatureCollection",
-                    features: [],
-                    _surveyor: d.nama
-                }))
-            );
+            showLoading();
 
-            const [progresData, ...zonaFeatures] = await Promise.all([
-                fetch(GOOGLE_SHEET_URL + "&cacheBust=" + Date.now()).then(res => res.text()),
-                ...promisesZona
-            ]);
+            // Step 1: load Google Sheet dengan cache 5 menit
+            let progresData;
+            const cacheKey = "progresCache";
+            const cacheTimeKey = "progresCacheTime";
+            const now = Date.now();
+            const lastCache = sessionStorage.getItem(cacheTimeKey);
 
-            const allFeatures = zonaFeatures.flatMap(fc =>
-                (fc.features || []).map(f => {
-                    f.properties.Surveyor = fc._surveyor;
-                    return f;
-                })
-            );
+            if (lastCache && now - lastCache < 5 * 60 * 1000) {
+                progresData = sessionStorage.getItem(cacheKey);
+            } else {
+                progresData = await fetch(GOOGLE_SHEET_URL).then(res => res.text());
+                sessionStorage.setItem(cacheKey, progresData);
+                sessionStorage.setItem(cacheTimeKey, now);
+            }
 
-            zonaGeoJSON = {
-                type: "FeatureCollection",
-                features: allFeatures
-            };
             allProgresRows = Papa.parse(progresData, {
                 header: true,
                 dynamicTyping: true,
@@ -78,34 +77,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
             updateLastUpdateText();
 
-            // Target dihitung otomatis dari jumlah zona (fitur) di file GeoJSON.
-            surveyorTarget = {};
-            zonaFeatures.forEach(fc => {
-                const surveyor = fc._surveyor;
-                const targetZona = fc.features ? fc.features.length : 0; // Menghitung jumlah zona
-                surveyorTarget[surveyor] = targetZona;
-            });
-
-            zonaGeoJSON.features.forEach((f, idx) => {
-                const id = String(f.properties?.BagiZona || `zona_${idx}`);
-                if (!baseMapData[id]) {
-                    baseMapData[id] = {
-                        nama: f.properties?.Kecamatan || `Zona ${id}`,
-                        selesai: 0,
-                        surveyor: f.properties?.Surveyor || "-"
-                    };
-                }
-            });
-
+            // Step 2: populate filter
             populateSurveyorFilter(SURVEYOR_DATA.map(d => d.nama));
-            document.getElementById('surveyorFilter').addEventListener('change', updateDashboardView);
+            document.getElementById('surveyorFilter')
+                .addEventListener('change', async (e) => {
+                    const val = e.target.value;
+                    await loadGeoJSONFor(val);
+                    updateDashboardView();
+                });
+
+            // Step 3: load default data (semua)
+            await loadGeoJSONFor('all');
             updateDashboardView();
 
         } catch (err) {
             console.error("❌ Gagal load dashboard:", err);
+        } finally {
+            hideLoading();
         }
     }
 
+    // ================== DATA LOADER ==================
+    async function loadGeoJSONFor(surveyor) {
+        if (zonaGeoJSON && zonaGeoJSON.features.length > 0) return; // sudah pernah load semua
+
+        const promisesZona = SURVEYOR_DATA.map(d =>
+            fetch(GEOJSON_FOLDER_PATH + d.file)
+                .then(res => res.json())
+                .then(fc => { fc._surveyor = d.nama; return fc; })
+                .catch(() => ({ type: "FeatureCollection", features: [], _surveyor: d.nama }))
+        );
+
+        const zonaFeatures = await Promise.all(promisesZona);
+
+        const allFeatures = zonaFeatures.flatMap(fc =>
+            (fc.features || []).map(f => {
+                f.properties.Surveyor = fc._surveyor;
+                return f;
+            })
+        );
+
+        zonaGeoJSON = { type: "FeatureCollection", features: allFeatures };
+
+        // hitung target surveyor
+        surveyorTarget = {};
+        zonaFeatures.forEach(fc => {
+            const surveyorName = fc._surveyor;
+            surveyorTarget[surveyorName] = fc.features.length || 0;
+        });
+
+        // siapkan base map data
+        zonaGeoJSON.features.forEach((f, idx) => {
+            const id = String(f.properties?.BagiZona || `zona_${idx}`);
+            if (!baseMapData[id]) {
+                baseMapData[id] = {
+                    nama: f.properties?.Kecamatan || `Zona ${id}`,
+                    selesai: 0,
+                    surveyor: f.properties?.Surveyor || "-"
+                };
+            }
+        });
+    }
+
+    // ================== DASHBOARD VIEW ==================
     function updateDashboardView() {
         const selectedSurveyor = document.getElementById('surveyorFilter').value;
         const filteredRows = selectedSurveyor === 'all'
@@ -138,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return { mapData };
     }
 
+    // ================== KPI ==================
     function renderKPIs(mapData, selectedSurveyor) {
         let totalSelesai = 0;
         for (const id in mapData) totalSelesai += mapData[id].selesai;
@@ -171,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `${totalAreaSelesai} / ${totalZona} Zona`;
     }
 
+    // ================== CHARTS ==================
     function renderPieChart(mapData, selectedSurveyor) {
         let totalSelesai = 0;
         for (const id in mapData) totalSelesai += mapData[id].selesai;
@@ -260,8 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let dateObj;
             if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(tglStr)) {
-                const parts = tglStr.split('/'); // format M/D/YYYY
-                // Urutan: tahun, bulan (0-11), hari
+                const parts = tglStr.split('/');
                 dateObj = new Date(parts[2], parts[0] - 1, parts[1]);
             } else {
                 dateObj = new Date(tglStr);
@@ -309,6 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ================== KELUH KESAH ==================
     function renderKeluhKesah(rows) {
         const listContainer = document.getElementById('keluh-kesah-list');
         listContainer.innerHTML = '';
@@ -332,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ================== MAP ==================
     function renderMap(mapData, geojson, selectedSurveyor) {
         if (!map) {
             map = L.map('map').setView([-2.5489, 118.0149], 5);
@@ -428,6 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bar.setAttribute('aria-valuenow', p);
     }
 
+    // ================== HELPER ==================
     function populateSurveyorFilter(names) {
         const filter = document.getElementById('surveyorFilter');
         names.sort().forEach(n => {
@@ -460,5 +498,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (marquee) marquee.textContent = lastUpdateText;
     }
 
+    // Jalankan
     initDashboard();
 });
